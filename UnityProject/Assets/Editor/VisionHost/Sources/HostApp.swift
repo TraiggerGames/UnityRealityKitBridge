@@ -1,11 +1,17 @@
 import SwiftUI
 import RealityKit
 
+// Build-time switches written into Info.plist by integrate_host.rb.
+// MVPDebugUI=false is the production mode: no control window, no native marker.
+enum HostConfig {
+    static let debugUI = Bundle.main.object(forInfoDictionaryKey: "MVPDebugUI") as? Bool ?? true
+}
+
 @main struct HostApp: App {
     @StateObject private var bridge = Bridge.shared
     @State private var style: ImmersionStyle = .mixed
     var body: some SwiftUI.Scene {
-        WindowGroup { LaunchView().environmentObject(bridge) }
+        WindowGroup(id: "launch") { LaunchView().environmentObject(bridge) }
         ImmersiveSpace(id: "cube-space") {
             SceneSpace().environmentObject(bridge)
         }
@@ -13,23 +19,54 @@ import RealityKit
     }
 }
 
+// Startup is automatic: load assets -> open the immersive space -> start Unity.
+// Debug builds keep the window with manual controls and live diagnostics;
+// production builds show only a short loading message, then hide the window.
 struct LaunchView: View {
     @EnvironmentObject private var bridge: Bridge
     @StateObject private var sensors = SensorService.shared
     @Environment(\.openImmersiveSpace) private var open
     @Environment(\.dismissImmersiveSpace) private var dismiss
+    @Environment(\.dismissWindow) private var dismissWindow
+    @AppStorage("mvp.autoStart") private var autoStart = true
     @State private var isOpen = false
     @State private var unityStarted = false
+    @State private var failed = false
     @State private var message = "Preparando modelos exportados de Unity."
     @State private var modelsReady = false
     @State private var modelCount = 0
 
     var body: some View {
-        VStack(spacing: 20) {
-            Text("Unity → RealityKit · sensores v0.12")
+        Group {
+            if HostConfig.debugUI { debugPanel } else { productionPanel }
+        }
+        .padding()
+        .task { await prepare() }
+    }
+
+    private var productionPanel: some View {
+        VStack(spacing: 16) {
+            if failed {
+                Text(message)
+                Button("Reintentar") { Task { await run() } }
+            } else {
+                ProgressView()
+                Text("Cargando experiencia…")
+            }
+        }
+    }
+
+    private var debugPanel: some View {
+        VStack(spacing: 16) {
+            Text("Unity → RealityKit · sensores v0.12 · DEBUG")
             Text(message)
             Text("Objetos: \(bridge.objects.count) · mensajes: \(bridge.messageCount) · modelos USD: \(modelCount)")
             Text("\(sensors.status) · superficies: \(sensors.surfaceCount)")
+            TimelineView(.periodic(from: .now, by: 1)) { _ in
+                // Polled once per second so diagnostics add no per-frame redraws.
+                Text(bridge.takeStats().summary).monospacedDigit()
+            }
+            Toggle("Inicio automático", isOn: $autoStart).frame(maxWidth: 320)
             Button(isOpen ? "Cerrar espacio" : "1. Abrir espacio nativo") {
                 Task {
                     if isOpen {
@@ -37,34 +74,55 @@ struct LaunchView: View {
                         isOpen = false
                         message = "Espacio cerrado."
                     } else {
-                        switch await open(id: "cube-space") {
-                        case .opened:
-                            isOpen = true
-                            message = "Espacio abierto; el marcador magenta es nativo."
-                            print("[MVP] Immersive space opened")
-                        case .userCancelled:
-                            message = "Apertura cancelada."
-                        case .error:
-                            message = "Error al abrir el espacio."
-                        @unknown default:
-                            message = "Resultado desconocido al abrir el espacio."
-                        }
+                        await openSpace()
                     }
                 }
             }
-            Button("2. Iniciar lógica Unity") {
-                unityStarted = true
-                UnityRuntime.shared.start()
-                message = "Unity iniciado; las piezas vienen de C#."
-            }
-            .disabled(!isOpen || !modelsReady || unityStarted)
-        }.padding().task {
-            await ModelAssetStore.shared.loadAll()
-            AudioAssetStore.shared.loadAll()
-            modelCount = ModelAssetStore.shared.count
-            modelsReady = true
-            message = "Modelos preparados: \(modelCount). Abre el espacio."
+            Button("2. Iniciar lógica Unity") { startUnity() }
+                .disabled(!isOpen || !modelsReady || unityStarted)
+            Button("Ocultar esta ventana") { dismissWindow(id: "launch") }
         }
+    }
+
+    private func prepare() async {
+        await ModelAssetStore.shared.loadAll()
+        AudioAssetStore.shared.loadAll()
+        modelCount = ModelAssetStore.shared.count
+        modelsReady = true
+        message = "Modelos preparados: \(modelCount)."
+        if autoStart || !HostConfig.debugUI { await run() }
+        else { message += " Abre el espacio." }
+    }
+
+    private func run() async {
+        failed = false
+        await openSpace()
+        guard isOpen else { failed = true; return }
+        startUnity()
+        if !HostConfig.debugUI { dismissWindow(id: "launch") }
+    }
+
+    private func openSpace() async {
+        guard !isOpen else { return }
+        switch await open(id: "cube-space") {
+        case .opened:
+            isOpen = true
+            message = "Espacio abierto; el marcador magenta es nativo."
+            print("[MVP] Immersive space opened")
+        case .userCancelled:
+            message = "Apertura cancelada."
+        case .error:
+            message = "Error al abrir el espacio."
+        @unknown default:
+            message = "Resultado desconocido al abrir el espacio."
+        }
+    }
+
+    private func startUnity() {
+        guard isOpen, modelsReady, !unityStarted else { return }
+        unityStarted = true
+        UnityRuntime.shared.start()
+        message = "Unity iniciado; las piezas vienen de C#."
     }
 }
 
@@ -75,13 +133,15 @@ struct SceneSpace: View {
 
     var body: some View {
         RealityView { content in
-            // Fixed reference marker. It never receives a Unity transform.
-            let marker = ModelEntity(mesh: .generateBox(size: 0.3),
-                                     materials: [UnlitMaterial(color: .magenta)])
-            marker.name = "native-marker"
-            marker.position = [-0.8, 1.45, -1.4]
-            content.add(marker)
-            print("[MVP] RealityView created marker")
+            // Debug-only fixed reference marker. It never receives a Unity transform.
+            if HostConfig.debugUI {
+                let marker = ModelEntity(mesh: .generateBox(size: 0.3),
+                                         materials: [UnlitMaterial(color: .magenta)])
+                marker.name = "native-marker"
+                marker.position = [-0.8, 1.45, -1.4]
+                content.add(marker)
+            }
+            print("[MVP] RealityView created")
         } update: { content in
             let currentIDs = Set(bridge.objects.map(\.id))
             // A v2 frame is a complete snapshot: remove objects absent from it.

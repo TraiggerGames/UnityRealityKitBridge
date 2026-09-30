@@ -38,6 +38,27 @@ public static class BuildVisionExperience
         if (!Application.isBatchMode) EditorUtility.RevealInFinder(destination);
     }
 
+    const string DebugPref = "MVP.DebugHostUI";
+    // Debug host UI defaults on; Development Build also forces it on.
+    static bool DebugHostUI
+    {
+        get => EditorPrefs.GetBool(DebugPref, true);
+        set => EditorPrefs.SetBool(DebugPref, value);
+    }
+
+    [MenuItem("MVP/Debug host UI (window + diagnostics)")]
+    static void ToggleDebugHostUI() => DebugHostUI = !DebugHostUI;
+
+    [MenuItem("MVP/Debug host UI (window + diagnostics)", true)]
+    static bool ToggleDebugHostUIValidate()
+    {
+        Menu.SetChecked("MVP/Debug host UI (window + diagnostics)", DebugHostUI);
+        return true;
+    }
+
+    internal static bool WantsDebugUI(BuildReport report) =>
+        DebugHostUI || (report.summary.options & BuildOptions.Development) != 0;
+
     internal static string HostTemplate => Path.Combine(Application.dataPath, "Editor/VisionHost");
 
     internal static void ExportBuildScene()
@@ -50,7 +71,7 @@ public static class BuildVisionExperience
         ExportVisionAudio.ExportActiveScene();
     }
 
-    internal static void Integrate(string destination)
+    internal static void Integrate(string destination, bool debugUI)
     {
         string sourceModels = Path.Combine(Application.dataPath, "VisionExport/Models");
         string targetModels = Path.Combine(destination, "VisionModels");
@@ -84,6 +105,7 @@ public static class BuildVisionExperience
         start.ArgumentList.Add(script);
         start.ArgumentList.Add(destination);
         start.ArgumentList.Add(swiftSources);
+        start.ArgumentList.Add(debugUI ? "debug" : "production");
         using (var process = Process.Start(start))
         {
             string stdout = process.StandardOutput.ReadToEnd();
@@ -109,6 +131,6 @@ public sealed class VisionBuildHooks : IPreprocessBuildWithReport, IPostprocessB
     public void OnPostprocessBuild(BuildReport report)
     {
         if (report.summary.platform == BuildTarget.VisionOS)
-            BuildVisionExperience.Integrate(report.summary.outputPath);
+            BuildVisionExperience.Integrate(report.summary.outputPath, BuildVisionExperience.WantsDebugUI(report));
     }
 }

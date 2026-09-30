@@ -21,7 +21,9 @@ Puente experimental para crear experiencias inmersivas con **lógica en Unity/C#
 2. Abre `UnityProject/` con Unity Hub. La escena `InteractiveSculptureSensors.unity` está marcada en Build Settings. Los ejemplos de [programación desde C#](docs/unity-workflow.md) están en `Assets/Scripts/Examples/`.
 3. Configura una vez el Bundle Identifier y el equipo de firma de Apple en Unity Player Settings.
 4. Pulsa **MVP → Build immersive visionOS app**. Elige una carpeta de destino. Unity exporta el Player y añade automáticamente `NativeHost`, los modelos, las texturas, el audio y los permisos de sensores.
-5. Abre el `.xcodeproj` resultante, selecciona el esquema **NativeHost**, firma y ejecuta en Vision Pro. Abre el espacio inmersivo, acepta los permisos que quieras usar e inicia la lógica Unity.
+5. Abre el `.xcodeproj` resultante, selecciona el esquema **NativeHost**, firma y ejecuta en Vision Pro. El host abre solo el espacio inmersivo e inicia la lógica Unity; acepta los permisos de sensores que quieras usar.
+
+**Modo debug / producción.** El menú **MVP → Debug host UI** (activo por defecto; un Development Build también lo activa) decide qué host se genera. En debug la ventana muestra estado, botones manuales, interruptor de inicio automático y diagnósticos (mensajes/s, tamaño, tiempo de decodificación, peor intervalo entre frames) y se ve el cubo magenta nativo. Con el menú desmarcado y sin Development Build, el host muestra solo «Cargando experiencia…», oculta la ventana al arrancar y no dibuja el marcador. Se escribe como `MVPDebugUI` en el `Info.plist` del host.
 
 La copia local actual del export está en `Xcode/Generated/`; **no se sube a Git**. Después de clonar, genérala con el paso 4.
 

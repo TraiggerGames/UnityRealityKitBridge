@@ -1,4 +1,5 @@
 import Foundation
+import QuartzCore
 import simd
 
 // The bridge accepts the new multi-object protocol (v2) and the old cube
@@ -43,6 +44,19 @@ private struct LegacyCube: Decodable {
     }
 }
 
+// Lightweight counters for the debug window. Not @Published on purpose:
+// publishing them would re-run the RealityView update on every frame.
+struct BridgeStats {
+    var messagesPerSecond = 0.0
+    var lastPayloadBytes = 0
+    var avgDecodeMs = 0.0
+    var worstGapMs = 0.0
+    var summary: String {
+        String(format: "%.0f msg/s · %d B · decode %.2f ms · peor intervalo %.0f ms",
+               messagesPerSecond, lastPayloadBytes, avgDecodeMs, worstGapMs)
+    }
+}
+
 @MainActor final class Bridge: ObservableObject {
     static let shared = Bridge()
     @Published private(set) var objects: [SceneObjectState] = []
@@ -51,6 +65,10 @@ private struct LegacyCube: Decodable {
     var sendSelectionToUnity: ((String) -> Void)?
     var sendEventToUnity: ((String) -> Void)?
     private var observer: NSObjectProtocol?
+    private var stats = BridgeStats()
+    private var windowStart = CACurrentMediaTime()
+    private var windowCount = 0
+    private var lastReceive = 0.0
 
     private init() {
         observer = NotificationCenter.default.addObserver(
@@ -61,8 +79,28 @@ private struct LegacyCube: Decodable {
         }
     }
 
+    /// Returns the stats gathered since the previous call and restarts the window.
+    func takeStats() -> BridgeStats {
+        let now = CACurrentMediaTime()
+        var out = stats
+        out.messagesPerSecond = Double(windowCount) / max(now - windowStart, 0.001)
+        stats.worstGapMs = 0
+        windowStart = now
+        windowCount = 0
+        return out
+    }
+
     func receive(_ json: String) {
         guard let data = json.data(using: .utf8) else { return }
+        let began = CACurrentMediaTime()
+        defer {
+            let done = CACurrentMediaTime()
+            windowCount += 1
+            stats.lastPayloadBytes = data.count
+            stats.avgDecodeMs += ((done - began) * 1000 - stats.avgDecodeMs) * 0.1
+            if lastReceive > 0 { stats.worstGapMs = max(stats.worstGapMs, (began - lastReceive) * 1000) }
+            lastReceive = began
+        }
         if let frame = try? JSONDecoder().decode(SceneFrame.self, from: data), frame.version == 2 {
             // Reject duplicate IDs before RealityKit entity lookup becomes ambiguous.
             guard Set(frame.objects.map(\.id)).count == frame.objects.count else { return }
