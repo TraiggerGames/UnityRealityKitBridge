@@ -106,6 +106,10 @@ public static class BuildVisionExperience
         start.ArgumentList.Add(destination);
         start.ArgumentList.Add(swiftSources);
         start.ArgumentList.Add(debugUI ? "debug" : "production");
+        // Player Settings are the single source of the version shown by the host.
+        start.ArgumentList.Add(PlayerSettings.bundleVersion);
+        string build = PlayerSettings.VisionOS.buildNumber;
+        start.ArgumentList.Add(string.IsNullOrEmpty(build) ? "1" : build);
         using (var process = Process.Start(start))
         {
             string stdout = process.StandardOutput.ReadToEnd();

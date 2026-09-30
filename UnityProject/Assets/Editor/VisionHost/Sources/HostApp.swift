@@ -4,6 +4,8 @@ import RealityKit
 // Build-time switches written into Info.plist by integrate_host.rb.
 // MVPDebugUI=false is the production mode: no control window, no native marker.
 enum HostConfig {
+    static let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "?"
+    static let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "?"
     static let debugUI = Bundle.main.object(forInfoDictionaryKey: "MVPDebugUI") as? Bool ?? true
     // Demo shift between Unity's origin and the native marker. Anchors use the
     // same shift so Unity coordinates mean the same place everywhere.
@@ -63,7 +65,7 @@ struct LaunchView: View {
 
     private var debugPanel: some View {
         VStack(spacing: 16) {
-            Text("Unity → RealityKit · sensores v0.12 · DEBUG")
+            Text("Unity → RealityKit v\(HostConfig.version) (\(HostConfig.build)) · DEBUG")
             Text(message)
             Text("Objetos: \(bridge.objects.count) · mensajes: \(bridge.messageCount) · modelos USD: \(modelCount)")
             Text("\(sensors.status) · superficies: \(sensors.surfaceCount)")

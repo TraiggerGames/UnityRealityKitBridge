@@ -42,6 +42,8 @@ La copia local actual del export está en `Xcode/Generated/`; **no se sube a Git
 
 Los datos de manos y superficies requieren permisos independientes. Apple los ofrece mediante ARKit dentro de un espacio inmersivo; el sonido se emite desde la posición de la entidad RealityKit. Véanse [ARKit en visionOS](https://developer.apple.com/documentation/arkit/arkit-in-visionos), [permisos](https://developer.apple.com/documentation/visionos/setting-up-access-to-arkit-data/) y [audio espacial](https://developer.apple.com/documentation/realitykit/spatialaudiocomponent).
 
+**Versión.** Se cambia en un solo sitio: Unity Player Settings (*Version* y, para visionOS, *Build*). El build la copia al `Info.plist` del host y la ventana debug la muestra.
+
 ## Estructura
 
 ```text

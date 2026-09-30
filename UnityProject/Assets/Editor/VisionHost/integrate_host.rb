@@ -1,12 +1,14 @@
 #!/usr/bin/env ruby
-# Usage: ruby integrate_host.rb /path/to/Unity-visionOS-build /path/to/NativeHost/Sources [debug|production]
+# Usage: ruby integrate_host.rb /path/to/Unity-visionOS-build /path/to/NativeHost/Sources [debug|production] [version] [build]
 # Runs once on a COPY of a fresh Unity Xcode build. Refuses an already integrated target.
 require 'xcodeproj'
 require 'fileutils'
 require 'pathname'
 
-build_dir, source_dir, mode = ARGV
+build_dir, source_dir, mode, version, build = ARGV
 mode ||= 'debug'
+version = '1.0' if version.to_s.empty?
+build = '1' if build.to_s.empty?
 abort 'Mode must be debug or production' unless %w[debug production].include?(mode)
 abort 'Pass Unity build directory and NativeHost/Sources directory' unless build_dir && source_dir
 project_path = Dir[File.join(build_dir, '*.xcodeproj')].first or abort 'No .xcodeproj found'
@@ -32,8 +34,8 @@ File.write(File.join(host_folder, 'Info.plist'), <<~PLIST)
     <key>CFBundleInfoDictionaryVersion</key><string>6.0</string>
     <key>CFBundleName</key><string>$(PRODUCT_NAME)</string>
     <key>CFBundlePackageType</key><string>APPL</string>
-    <key>CFBundleShortVersionString</key><string>1.0</string>
-    <key>CFBundleVersion</key><string>1</string>
+    <key>CFBundleShortVersionString</key><string>#{version}</string>
+    <key>CFBundleVersion</key><string>#{build}</string>
     <key>MVPLogicOnly</key><true/>
     <key>MVPDebugUI</key><#{mode == 'debug'}/>
     <key>NSHandsTrackingUsageDescription</key><string>Usamos las manos para que puedas programar interacciones con objetos inmersivos desde Unity.</string>
@@ -111,4 +113,4 @@ project.save
   source = source.gsub(call, guard)
   File.write(path, source)
 end
-puts "Added NativeHost (#{mode}) to #{project_path}"
+puts "Added NativeHost #{version} (#{build}, #{mode}) to #{project_path}"
