@@ -187,6 +187,8 @@ struct SceneSpace: View {
                     }
                     // Approximate unit collision; later derive it from mesh bounds.
                     root.components.set(InputTargetComponent())
+                    // Gaze highlight, so people can see which piece will react.
+                    root.components.set(HoverEffectComponent())
                     root.components.set(CollisionComponent(shapes: [.generateBox(size: [1, 1, 1])]))
                     content.add(root)
                 }

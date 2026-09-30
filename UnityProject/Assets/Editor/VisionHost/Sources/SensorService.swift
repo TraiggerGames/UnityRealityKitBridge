@@ -87,8 +87,8 @@ import simd
             let indexWorld = anchor.originFromAnchorTransform * index.anchorFromJointTransform
             let thumbWorld = anchor.originFromAnchorTransform * thumb.anchorFromJointTransform
             emit(["type": "hand", "id": hand, "tracked": true,
-                  "position": point(indexWorld.columns.3),
-                  "secondary": point(thumbWorld.columns.3)])
+                  "position": position(indexWorld.columns.3),
+                  "secondary": position(thumbWorld.columns.3)])
         }
     }
 
@@ -124,9 +124,15 @@ import simd
                   "phase": phase,
                   "alignment": alignment,
                   "classification": classification,
-                  "position": point(world.columns.3), "normal": point(normal),
+                  "position": position(world.columns.3), "normal": point(normal),
                   "width": extent.width, "height": extent.height])
         }
+    }
+
+    // Positions use Unity's coordinates (the host display offset removed), like
+    // drag and anchor events, so they can be compared with Unity transforms.
+    private func position(_ v: SIMD4<Float>) -> [String: Float] {
+        point(v - SIMD4<Float>(HostConfig.displayOffset, 0))
     }
 
     private func point(_ v: SIMD4<Float>) -> [String: Float] {

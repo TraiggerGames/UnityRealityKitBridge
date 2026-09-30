@@ -50,7 +50,7 @@ El host usa `UnityFramework.sendMessageToGO` hacia el GameObject `VisionSceneBri
 | `anchor` | `id` (nombre), `phase` (`added`/`updated`/`removed`), `tracked`, `position`, `rotation` | `VisionAnchors.AnchorUpdated` |
 | `surface` | `id` UUID, `phase` (`added`/`updated`/`removed`), `alignment`, `classification`, `position`, `normal`, `width`, `height` | `SurfaceUpdated` |
 
-Los nombres de ancla y su UUID de ARKit se guardan en `UserDefaults` (`mvp.anchors`); ARKit conserva las anclas entre lanzamientos. Si ARKit pierde una, llega `removed` y se olvida su nombre, de modo que `ensure` la vuelve a crear. Los eventos `anchor` anteriores al primer marco de Unity se reenvían al recibirlo. Las posiciones de eventos llegan a los scripts C# con Z reflejada a coordenadas Unity. Las manos se limitan a unas 30 muestras/s por mano. `surface` representa el rectángulo estimado del plano, no la malla completa de la habitación. Un `removed` invalida su UUID.
+Los nombres de ancla y su UUID de ARKit se guardan en `UserDefaults` (`mvp.anchors`); ARKit conserva las anclas entre lanzamientos. Si ARKit pierde una, llega `removed` y se olvida su nombre, de modo que `ensure` la vuelve a crear. Los eventos `anchor` anteriores al primer marco de Unity se reenvían al recibirlo. Las posiciones de `hand`, `surface`, `drag` y `anchor` ya descuentan el desplazamiento de visualización del host, de modo que coinciden con las coordenadas Unity de los objetos (las de `hand` y `surface` no lo hacían hasta ahora). Llegan a los scripts C# con Z reflejada a coordenadas Unity. Las manos se limitan a unas 30 muestras/s por mano. `surface` representa el rectángulo estimado del plano, no la malla completa de la habitación. Un `removed` invalida su UUID.
 
 ## Compatibilidad y evolución
 
