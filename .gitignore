@@ -1,0 +1,22 @@
+# Unity imports and machine-local state
+UnityProject/Library/
+UnityProject/Logs/
+UnityProject/Temp/
+UnityProject/Obj/
+UnityProject/Build/
+UnityProject/Builds/
+UnityProject/UserSettings/
+UnityProject/Assets/VisionExport/
+
+# Generated from sample-assets/result.glb by scripts/prepare_sample_model.py
+UnityProject/Assets/Models/UserModel/result.obj
+
+# Unity-generated Xcode export, binaries and player code are local build output
+Xcode/Generated/
+
+# macOS / Xcode personal state
+.DS_Store
+*.xcuserstate
+xcuserdata/
+*.xccheckout
+*.xcscmblueprint
