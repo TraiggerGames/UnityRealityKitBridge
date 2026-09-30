@@ -37,6 +37,8 @@ La copia local actual del export está en `Xcode/Generated/`; **no se sube a Git
 | Mano y pinza personalizada | `VisionInput.HandUpdated` |
 | Detectar mesas, suelo o paredes | `VisionInput.SurfaceUpdated` |
 | Reproducir sonido desde un objeto | `VisionAudioSource.Play()` |
+| Anclar contenido al mundo real (persistente) | `VisionAnchors.Ensure()`, `VisionObject.AttachToAnchor()` |
+| Ver u ocluir con la malla de la habitación | `VisionMap.Mode` |
 
 Los datos de manos y superficies requieren permisos independientes. Apple los ofrece mediante ARKit dentro de un espacio inmersivo; el sonido se emite desde la posición de la entidad RealityKit. Véanse [ARKit en visionOS](https://developer.apple.com/documentation/arkit/arkit-in-visionos), [permisos](https://developer.apple.com/documentation/visionos/setting-up-access-to-arkit-data/) y [audio espacial](https://developer.apple.com/documentation/realitykit/spatialaudiocomponent).
 

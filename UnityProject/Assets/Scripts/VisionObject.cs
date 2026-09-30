@@ -12,6 +12,7 @@ public sealed class VisionObject : MonoBehaviour
     [SerializeField] private string modelKey = "";
     [SerializeField] private Color baseColor = Color.cyan;
     [SerializeField] private Color selectedColor = Color.yellow;
+    [SerializeField] private string anchorId = "";
 
     private bool selected;
     private string audioKey = "";
@@ -27,6 +28,20 @@ public sealed class VisionObject : MonoBehaviour
     public Color DisplayColor => selected ? selectedColor : baseColor;
     public string AudioKey => audioKey;
     public int AudioSequence => audioSequence;
+    // When set, position and rotation are relative to this anchor (VisionAnchors)
+    // and the object stays hidden until the anchor is located.
+    public string AnchorId => anchorId;
+
+    public void SetAnchor(string id) { anchorId = id ?? ""; }
+
+    // Anchors the object at a world pose (only if the anchor does not exist yet)
+    // and resets its transform, which from now on is local to the anchor.
+    public void AttachToAnchor(string id, Vector3 worldPosition, Quaternion worldRotation)
+    {
+        VisionAnchors.Ensure(id, worldPosition, worldRotation);
+        anchorId = id;
+        transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
+    }
 
     public void PlayAudio(string key)
     {

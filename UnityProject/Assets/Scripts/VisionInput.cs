@@ -38,6 +38,7 @@ public static class VisionInput
         public string type, id, phase, alignment, classification;
         public bool tracked;
         public V3 position, secondary, normal;
+        public Q4 rotation;
         public float width, height;
     }
     [Serializable] private struct V3
@@ -45,6 +46,13 @@ public static class VisionInput
         public float x, y, z;
         // Native RealityKit uses -Z in front; Unity uses +Z in front.
         public Vector3 Unity => new Vector3(x, y, -z);
+    }
+
+    [Serializable] private struct Q4
+    {
+        public float x, y, z, w;
+        // The reflection across Z is its own inverse (see VisionSceneBridge.Q4).
+        public Quaternion Unity => new Quaternion(-x, -y, z, w);
     }
 
     internal static void Dispatch(string json)
@@ -68,6 +76,11 @@ public static class VisionInput
                     Center = value.position.Unity, Normal = value.normal.Unity,
                     Width = value.width, Height = value.height
                 });
+                break;
+            case "anchor":
+                VisionAnchors.Receive(value.id, value.phase, value.tracked,
+                    value.position.Unity,
+                    value.rotation.w == 0f ? Quaternion.identity : value.rotation.Unity);
                 break;
             case "drag":
                 ObjectDragged?.Invoke(new DragSample {

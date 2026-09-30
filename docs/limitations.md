@@ -8,6 +8,7 @@
 
 ## Pendiente en Vision Pro
 
+- Anclas (persistencia tras cerrar y reabrir la app, pérdida de seguimiento, rechazo del permiso) y malla de la habitación (coste y estabilidad): ni se ha compilado el Swift nuevo ni se ha probado en dispositivo.
 - Arrastre, reproducción de audio espacial, posiciones de dedos y detección de superficies de esta versión.
 - Aceptar y rechazar cada permiso de ARKit por separado, abrir/cerrar el espacio repetidas veces y probar pérdida de seguimiento.
 - Medir latencia, consumo y estabilidad. Builds anteriores mostraron advertencias Metal al ejecutar Unity con su ventana oculta.

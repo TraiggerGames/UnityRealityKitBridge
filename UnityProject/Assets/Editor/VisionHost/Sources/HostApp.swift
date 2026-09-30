@@ -5,6 +5,9 @@ import RealityKit
 // MVPDebugUI=false is the production mode: no control window, no native marker.
 enum HostConfig {
     static let debugUI = Bundle.main.object(forInfoDictionaryKey: "MVPDebugUI") as? Bool ?? true
+    // Demo shift between Unity's origin and the native marker. Anchors use the
+    // same shift so Unity coordinates mean the same place everywhere.
+    static let displayOffset: SIMD3<Float> = [0.6, 0, 0]
 }
 
 @main struct HostApp: App {
@@ -25,6 +28,8 @@ enum HostConfig {
 struct LaunchView: View {
     @EnvironmentObject private var bridge: Bridge
     @StateObject private var sensors = SensorService.shared
+    @StateObject private var anchors = AnchorService.shared
+    @StateObject private var map = MapService.shared
     @Environment(\.openImmersiveSpace) private var open
     @Environment(\.dismissImmersiveSpace) private var dismiss
     @Environment(\.dismissWindow) private var dismissWindow
@@ -62,6 +67,11 @@ struct LaunchView: View {
             Text(message)
             Text("Objetos: \(bridge.objects.count) · mensajes: \(bridge.messageCount) · modelos USD: \(modelCount)")
             Text("\(sensors.status) · superficies: \(sensors.surfaceCount)")
+            Text("\(anchors.status) · ancladas: \(anchors.poses.count) · malla: \(map.meshCount)")
+            Picker("Malla", selection: Binding(get: { map.mode }, set: { map.setMode($0) })) {
+                ForEach(MapMode.allCases, id: \.self) { Text($0.rawValue).tag($0) }
+            }.pickerStyle(.segmented).frame(maxWidth: 360)
+            Button("Borrar anclas") { anchors.clearAll() }
             TimelineView(.periodic(from: .now, by: 1)) { _ in
                 // Polled once per second so diagnostics add no per-frame redraws.
                 Text(bridge.takeStats().summary).monospacedDigit()
@@ -129,6 +139,7 @@ struct LaunchView: View {
 struct SceneSpace: View {
     @EnvironmentObject private var bridge: Bridge
     @StateObject private var sensors = SensorService.shared
+    @StateObject private var anchors = AnchorService.shared
     private let entityPrefix = "vision:"
 
     var body: some View {
@@ -141,6 +152,9 @@ struct SceneSpace: View {
                 marker.position = [-0.8, 1.45, -1.4]
                 content.add(marker)
             }
+            // Room mesh (empty unless Unity or the debug window enables it).
+            MapService.shared.root.removeFromParent()
+            content.add(MapService.shared.root)
             print("[MVP] RealityView created")
         } update: { content in
             let currentIDs = Set(bridge.objects.map(\.id))
@@ -174,9 +188,23 @@ struct SceneSpace: View {
                     root.components.set(CollisionComponent(shapes: [.generateBox(size: [1, 1, 1])]))
                     content.add(root)
                 }
-                root.transform = Transform(scale: state.scale.simd,
-                                           rotation: state.rotation.simd,
-                                           translation: state.position.simd + [0.6, 0, 0])
+                if let anchorID = state.anchor, !anchorID.isEmpty {
+                    // Anchored: position/rotation are local to the anchor, and
+                    // the object stays hidden until ARKit knows where it is.
+                    let local = Transform(scale: state.scale.simd, rotation: state.rotation.simd,
+                                          translation: state.position.simd).matrix
+                    if let pose = anchors.poses[anchorID] {
+                        root.transform = Transform(matrix: pose * local)
+                        root.isEnabled = true
+                    } else {
+                        root.isEnabled = false
+                    }
+                } else {
+                    root.isEnabled = true
+                    root.transform = Transform(scale: state.scale.simd,
+                                               rotation: state.rotation.simd,
+                                               translation: state.position.simd + HostConfig.displayOffset)
+                }
                 AudioPlaybackTracker.shared.update(id: state.id, key: state.audio,
                                                    sequence: state.audioSequence,
                                                    entity: root)
@@ -187,6 +215,7 @@ struct SceneSpace: View {
                 // the color provided by C# in each protocol frame.
                 if state.shape != "model" { colorize(root, color: color) }
             }
+            if HostConfig.debugUI { syncAnchorMarkers(content) }
         }
         .gesture(SpatialTapGesture().targetedToAnyEntity().onEnded { value in
             var entity: Entity? = value.entity
@@ -202,10 +231,34 @@ struct SceneSpace: View {
             .onChanged { value in sendDrag(value, phase: "changed") }
             .onEnded { value in sendDrag(value, phase: "ended") })
         .task { await sensors.start() }
+        .task { await anchors.start() }
+        .task { await MapService.shared.resume() }
         .onAppear { print("[MVP] SceneSpace appeared") }
         .onDisappear {
             sensors.stop()
+            anchors.stop()
+            MapService.shared.stop()
             print("[MVP] SceneSpace disappeared")
+        }
+    }
+
+    // Debug only: a small cyan sphere at every tracked anchor.
+    private func syncAnchorMarkers(_ content: RealityViewContent) {
+        let prefix = "anchor:"
+        for entity in content.entities where entity.name.hasPrefix(prefix) {
+            if anchors.poses[String(entity.name.dropFirst(prefix.count))] == nil { content.remove(entity) }
+        }
+        for (name, pose) in anchors.poses {
+            let marker: Entity
+            if let existing = content.entities.first(where: { $0.name == prefix + name }) {
+                marker = existing
+            } else {
+                marker = ModelEntity(mesh: .generateSphere(radius: 0.03),
+                                     materials: [UnlitMaterial(color: .cyan)])
+                marker.name = prefix + name
+                content.add(marker)
+            }
+            marker.transform = Transform(matrix: pose)
         }
     }
 
@@ -222,10 +275,10 @@ struct SceneSpace: View {
             if current.name.hasPrefix(entityPrefix) {
                 let id = String(current.name.dropFirst(entityPrefix.count))
                 let point = value.convert(value.location3D, from: .local, to: .scene)
-                // Inverse of the host's +0.6 X display offset.
+                // Inverse of the host's display offset.
                 let payload: [String: Any] = ["type": "drag", "id": id,
                     "phase": phase,
-                    "position": ["x": point.x - 0.6, "y": point.y, "z": point.z]]
+                    "position": ["x": point.x - HostConfig.displayOffset.x, "y": point.y, "z": point.z]]
                 if let data = try? JSONSerialization.data(withJSONObject: payload),
                    let json = String(data: data, encoding: .utf8) {
                     bridge.sendNativeEvent(json)

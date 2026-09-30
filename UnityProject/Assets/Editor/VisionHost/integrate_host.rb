@@ -16,9 +16,10 @@ unity_app = project.targets.find { |target| target.product_type == 'com.apple.pr
 unity_framework = project.targets.find { |target| target.name == 'UnityFramework' }
 abort 'Expected Unity app and UnityFramework targets' unless unity_app && unity_framework
 
+host_files = %w[Bridge.swift HostApp.swift UnityRuntime.swift ModelAssetStore.swift AudioAssetStore.swift SensorService.swift AnchorService.swift MapService.swift]
 host_folder = File.join(build_dir, 'NativeHost')
 FileUtils.mkdir_p(host_folder)
-%w[Bridge.swift HostApp.swift UnityRuntime.swift ModelAssetStore.swift AudioAssetStore.swift SensorService.swift].each do |filename|
+host_files.each do |filename|
   FileUtils.cp(File.join(source_dir, filename), File.join(host_folder, filename))
 end
 File.write(File.join(host_folder, 'Info.plist'), <<~PLIST)
@@ -43,7 +44,7 @@ PLIST
 
 host = project.new_target(:application, 'NativeHost', :visionos, '1.0')
 group = project.main_group.new_group('NativeHost', 'NativeHost')
-%w[Bridge.swift HostApp.swift UnityRuntime.swift ModelAssetStore.swift AudioAssetStore.swift SensorService.swift].each do |filename|
+host_files.each do |filename|
   ref = group.new_file(filename)
   host.source_build_phase.add_file_reference(ref)
 end

@@ -19,6 +19,7 @@ struct SceneObjectState: Decodable {
     let asset: String?
     let audio: String?
     let audioSequence: Int?
+    let anchor: String?
     let position: V3
     let rotation: Q4
     let scale: V3
@@ -27,6 +28,8 @@ struct SceneObjectState: Decodable {
 private struct SceneFrame: Decodable {
     let version: Int
     let objects: [SceneObjectState]
+    let anchors: [AnchorCommand]?
+    let map: String?
 }
 private struct LegacyCube: Decodable {
     let version: Int
@@ -37,7 +40,7 @@ private struct LegacyCube: Decodable {
     let scale: V3
     var asSceneObject: SceneObjectState {
         SceneObjectState(id: id, shape: "box", asset: nil, audio: nil,
-                         audioSequence: nil, position: position,
+                         audioSequence: nil, anchor: nil, position: position,
                          rotation: rotation, scale: scale,
                          color: selected ? RGB(r: 1, g: 0.5, b: 0.1)
                                          : RGB(r: 0.1, g: 0.4, b: 1))
@@ -69,6 +72,8 @@ struct BridgeStats {
     private var windowStart = CACurrentMediaTime()
     private var windowCount = 0
     private var lastReceive = 0.0
+    private var unityReady = false
+    private var lastUnityMap = ""
 
     private init() {
         observer = NotificationCenter.default.addObserver(
@@ -106,6 +111,17 @@ struct BridgeStats {
             guard Set(frame.objects.map(\.id)).count == frame.objects.count else { return }
             objects = frame.objects
             protocolVersion = 2
+            if !unityReady {
+                // First frame: Unity's scene exists, so it can receive anchor events.
+                unityReady = true
+                AnchorService.shared.replay()
+            }
+            if let commands = frame.anchors { AnchorService.shared.apply(commands) }
+            // Only a change made by Unity overrides the debug window's picker.
+            if let map = frame.map, map != lastUnityMap {
+                lastUnityMap = map
+                MapService.shared.setMode(MapMode(rawValue: map) ?? .off)
+            }
         } else if let legacy = try? JSONDecoder().decode(LegacyCube.self, from: data),
                   legacy.version == 1, legacy.id == "cube" {
             objects = [legacy.asSceneObject]

@@ -61,6 +61,7 @@ public sealed class VisionSceneBridge : MonoBehaviour
             states.Add(new ObjectState {
                 id = item.Id, shape = item.ShapeName, asset = item.ModelKey,
                 audio = item.AudioKey, audioSequence = item.AudioSequence,
+                anchor = item.AnchorId,
                 position = V3.WorldPosition(transform.position),
                 rotation = new Q4(transform.rotation),
                 scale = new V3(transform.lossyScale),
@@ -69,13 +70,38 @@ public sealed class VisionSceneBridge : MonoBehaviour
         }
         // Sort by ID so the protocol and logs are deterministic.
         states.Sort((a, b) => string.CompareOrdinal(a.id, b.id));
-        SendNative(JsonUtility.ToJson(new SceneFrame { version = 2, objects = states.ToArray() }));
+        var commands = new AnchorCommand[VisionAnchors.Pending.Count];
+        for (int i = 0; i < commands.Length; i++)
+        {
+            var c = VisionAnchors.Pending[i];
+            commands[i] = new AnchorCommand {
+                id = c.Id, op = c.Op, sequence = c.Sequence,
+                position = V3.WorldPosition(c.Position), rotation = new Q4(c.Rotation)
+            };
+        }
+        SendNative(JsonUtility.ToJson(new SceneFrame {
+            version = 2, objects = states.ToArray(),
+            anchors = commands, map = VisionMap.ModeName
+        }));
     }
 
-    [Serializable] private struct SceneFrame { public int version; public ObjectState[] objects; }
+    [Serializable] private struct SceneFrame
+    {
+        public int version;
+        public ObjectState[] objects;
+        public AnchorCommand[] anchors;
+        public string map;
+    }
+    [Serializable] private struct AnchorCommand
+    {
+        public string id, op;
+        public int sequence;
+        public V3 position;
+        public Q4 rotation;
+    }
     [Serializable] private struct ObjectState
     {
-        public string id, shape, asset, audio;
+        public string id, shape, asset, audio, anchor;
         public int audioSequence;
         public V3 position, scale;
         public Q4 rotation;

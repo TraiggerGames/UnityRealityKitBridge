@@ -12,6 +12,8 @@ La lógica es un `MonoBehaviour` ordinario. Cambia `transform.position`, `rotati
 - **Arrastre 3D:** `VisionInput.ObjectDragged` envía ID, fase y posición. `Assets/Scripts/Examples/VisionDragMover.cs` mantiene la posición relativa entre el punto agarrado y el objeto.
 - **Manos:** `VisionInput.HandUpdated` envía punta de índice y pulgar por mano. `Assets/Scripts/Examples/VisionHandPinch.cs` calcula una pinza simple en C#; ajústala con filtros para producción.
 - **Superficies:** `VisionInput.SurfaceUpdated` envía centro, normal, tamaño y ciclo de vida de planos horizontales o verticales. `Assets/Scripts/Examples/VisionSurfacePlacer.cs` coloca un objeto sobre la primera superficie horizontal suficientemente grande.
+- **Anclas persistentes:** `VisionAnchors.Ensure(id, posición, rotación)` crea un ancla en el mundo real que sobrevive entre lanzamientos (`Place` la reemplaza, `Remove` la borra). `VisionObject.AttachToAnchor(id, posición, rotación)` ancla el objeto: desde ese momento su `transform` es local al ancla y el objeto está oculto hasta que ARKit la localiza. `VisionAnchors.AnchorUpdated` informa de altas, movimientos y pérdidas. `Assets/Scripts/Examples/VisionAnchorOnSurface.cs` ancla un objeto a la primera superficie horizontal y lo conserva en los siguientes arranques. Para borrar todas las anclas guardadas usa **Borrar anclas** en la ventana debug.
+- **Malla de la habitación:** `VisionMap.Mode = VisionMapMode.Mesh` dibuja la malla en alambre y `Occlusion` hace que las superficies reales oculten los objetos virtuales. Empieza en `Off` porque consume CPU y batería; en debug también se cambia desde la ventana.
 
 Los ejemplos de arrastre, pinza y colocación son **opcionales**: añade el componente al GameObject que elijas. La escena de muestra ya tiene `VisionAudioSource` en `user-model`, con `Assets/Audio/chime.wav`. Para otro sonido, asigna un WAV/AIFF mono importado y llama a `GetComponent<VisionAudioSource>().Play()` desde C#.
 
@@ -26,4 +28,4 @@ No edites archivos del Xcode generado para cambiar el comportamiento de una esce
 
 ## Qué todavía requiere ampliar la librería
 
-No se transfieren automáticamente animaciones esqueléticas, partículas, cámaras, luces, física de Unity, shaders arbitrarios, mallas de reconstrucción del entorno ni anclas persistentes. Un nuevo tipo de recurso o evento requiere una implementación genérica en C# y Swift. Después, las escenas pueden usarla desde Unity sin otra edición nativa.
+No se transfieren automáticamente animaciones esqueléticas, partículas, cámaras, luces, física de Unity, shaders arbitrarios, la malla de la habitación como datos en Unity (solo se dibuja o ocluye en el host). Un nuevo tipo de recurso o evento requiere una implementación genérica en C# y Swift. Después, las escenas pueden usarla desde Unity sin otra edición nativa.
