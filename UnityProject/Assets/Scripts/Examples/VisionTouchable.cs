@@ -13,6 +13,7 @@ public sealed class VisionTouchable : MonoBehaviour
     private VisionObject target;
     private bool leftInside, rightInside;
 
+    public bool SelectOnTouch { get => selectOnTouch; set => selectOnTouch = value; }
     public bool IsTouched => leftInside || rightInside;
     public event Action<string> TouchBegan; // hand: "left" or "right"
     public event Action<string> TouchEnded;

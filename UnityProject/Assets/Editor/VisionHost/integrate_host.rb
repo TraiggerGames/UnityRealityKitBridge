@@ -18,7 +18,7 @@ unity_app = project.targets.find { |target| target.product_type == 'com.apple.pr
 unity_framework = project.targets.find { |target| target.name == 'UnityFramework' }
 abort 'Expected Unity app and UnityFramework targets' unless unity_app && unity_framework
 
-host_files = %w[Bridge.swift HostApp.swift UnityRuntime.swift ModelAssetStore.swift AudioAssetStore.swift SensorService.swift AnchorService.swift MapService.swift]
+host_files = %w[Bridge.swift HostApp.swift UnityRuntime.swift ModelAssetStore.swift AudioAssetStore.swift SensorService.swift AnchorService.swift MapService.swift InfoPanel.swift]
 host_folder = File.join(build_dir, 'NativeHost')
 FileUtils.mkdir_p(host_folder)
 host_files.each do |filename|

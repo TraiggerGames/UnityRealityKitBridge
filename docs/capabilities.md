@@ -3,7 +3,7 @@
 | Capacidad | API desde Unity | Estado |
 | --- | --- | --- |
 | Modelos estáticos con textura | `VisionObject(Model)` + `MeshFilter`/`MeshRenderer` | Observado por el usuario en Vision Pro; exportador de una textura de color base. |
-| Transformaciones y lógica | Cualquier `MonoBehaviour` que cambie `Transform` | Flujo Unity→RealityKit observado; actualización a 10 Hz. |
+| Transformaciones y lógica | Cualquier `MonoBehaviour` que cambie `Transform` | Flujo Unity→RealityKit observado; actualización dinámica: un mensaje por frame mientras algo se mueve. |
 | Tap/select | `VisionObject.SelectionChanged` | Tap del cubo confirmado por el usuario; los modelos necesitan prueba específica. |
 | Arrastrar | `VisionInput.ObjectDragged` | Compilado para visionOS; posición 3D del gesto, sin movimiento automático. Prueba en dispositivo pendiente. |
 | Audio espacial | `VisionAudioSource.Play()` | Compilado para visionOS con WAV mono de ejemplo; reproducción en Vision Pro pendiente. |

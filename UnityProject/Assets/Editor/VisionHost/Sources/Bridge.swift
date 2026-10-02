@@ -20,6 +20,10 @@ struct SceneObjectState: Decodable {
     let audio: String?
     let audioSequence: Int?
     let anchor: String?
+    // Only for shape "panel": text card shown in the headset.
+    let title: String?
+    let text: String?
+    let faceUser: Bool?
     let position: V3
     let rotation: Q4
     let scale: V3
@@ -30,6 +34,8 @@ private struct SceneFrame: Decodable {
     let objects: [SceneObjectState]
     let anchors: [AnchorCommand]?
     let map: String?
+    let unityFps: Double?
+    let unityMaxFps: Double?
 }
 private struct LegacyCube: Decodable {
     let version: Int
@@ -40,7 +46,8 @@ private struct LegacyCube: Decodable {
     let scale: V3
     var asSceneObject: SceneObjectState {
         SceneObjectState(id: id, shape: "box", asset: nil, audio: nil,
-                         audioSequence: nil, anchor: nil, position: position,
+                         audioSequence: nil, anchor: nil, title: nil, text: nil,
+                         faceUser: nil, position: position,
                          rotation: rotation, scale: scale,
                          color: selected ? RGB(r: 1, g: 0.5, b: 0.1)
                                          : RGB(r: 0.1, g: 0.4, b: 1))
@@ -54,9 +61,31 @@ struct BridgeStats {
     var lastPayloadBytes = 0
     var avgDecodeMs = 0.0
     var worstGapMs = 0.0
+    var unityFps = 0.0
+    var unityMaxFps = 0.0
+    var unitySummary: String {
+        unityMaxFps > 0 ? String(format: "Unity %.0f / %.0f fps máx", unityFps, unityMaxFps)
+                        : "Unity: sin datos de fps (build antiguo)"
+    }
     var summary: String {
         String(format: "%.0f msg/s · %d B · decode %.2f ms · peor intervalo %.0f ms",
                messagesPerSecond, lastPayloadBytes, avgDecodeMs, worstGapMs)
+    }
+}
+
+// Counts RealityKit scene updates (one per rendered frame). Sampled once per
+// second by the debug window; not @Published so it never triggers redraws.
+@MainActor final class RenderFPS {
+    static let shared = RenderFPS()
+    private var frames = 0
+    private var windowStart = CACurrentMediaTime()
+    func tick() { frames += 1 }
+    func take() -> Double {
+        let now = CACurrentMediaTime()
+        let fps = Double(frames) / max(now - windowStart, 0.001)
+        frames = 0
+        windowStart = now
+        return fps
     }
 }
 
@@ -111,6 +140,8 @@ struct BridgeStats {
             guard Set(frame.objects.map(\.id)).count == frame.objects.count else { return }
             objects = frame.objects
             protocolVersion = 2
+            stats.unityFps = frame.unityFps ?? 0
+            stats.unityMaxFps = frame.unityMaxFps ?? 0
             if !unityReady {
                 // First frame: Unity's scene exists, so it can receive anchor events.
                 unityReady = true

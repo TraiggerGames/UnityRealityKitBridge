@@ -205,7 +205,7 @@ Transform:
   m_GameObject: {fileID: 20687218}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 1, z: -10}
+  m_LocalPosition: {x: 0.197, y: 1.35, z: 1.09}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -362,6 +362,7 @@ MonoBehaviour:
   modelKey: 
   baseColor: {r: 0.18, g: 0.65, b: 1, a: 1}
   selectedColor: {r: 1, g: 0.45, b: 0.12, a: 1}
+  anchorId: 
 --- !u!23 &858175575
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -565,6 +566,7 @@ MonoBehaviour:
   modelKey: user-model
   baseColor: {r: 1, g: 1, b: 1, a: 1}
   selectedColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  anchorId: 
 --- !u!23 &929947909
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -631,7 +633,7 @@ Transform:
   m_GameObject: {fileID: 929947905}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 1.15, y: 1.55, z: 2.15}
+  m_LocalPosition: {x: 0.325, y: 1.55, z: 2.15}
   m_LocalScale: {x: 0.45, y: 0.45, z: 0.45}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -674,6 +676,7 @@ MonoBehaviour:
   modelKey: 
   baseColor: {r: 0.25, g: 0.28, b: 0.38, a: 1}
   selectedColor: {r: 1, g: 1, b: 1, a: 1}
+  anchorId: 
 --- !u!23 &972649630
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -821,6 +824,7 @@ MonoBehaviour:
   modelKey: 
   baseColor: {r: 0.95, g: 0.3, b: 0.65, a: 1}
   selectedColor: {r: 1, g: 0.8, b: 0.2, a: 1}
+  anchorId: 
 --- !u!23 &1001844659
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -928,6 +932,7 @@ GameObject:
   - component: {fileID: 1796942306}
   - component: {fileID: 1796942305}
   - component: {fileID: 1796942304}
+  - component: {fileID: 1796942310}
   m_Layer: 0
   m_Name: orbit-a
   m_TagString: Untagged
@@ -968,6 +973,7 @@ MonoBehaviour:
   modelKey: 
   baseColor: {r: 0.2, g: 0.95, b: 0.65, a: 1}
   selectedColor: {r: 1, g: 0.8, b: 0.2, a: 1}
+  anchorId: 
 --- !u!23 &1796942306
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -1061,6 +1067,20 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1796942310
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1796942303}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 81e06b4c63b1347c190848eb76a4a241, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::VisionAudioSource
+  clip: {fileID: 8300000, guid: 2827f59c2ca524451aaa321a39f1e135, type: 3}
+  assetKey: chime
 --- !u!1 &1860998947
 GameObject:
   m_ObjectHideFlags: 0
@@ -1097,6 +1117,7 @@ MonoBehaviour:
   modelKey: portal-ring
   baseColor: {r: 0.65, g: 0.42, b: 1, a: 1}
   selectedColor: {r: 1, g: 0.85, b: 0.3, a: 1}
+  anchorId: 
 --- !u!23 &1860998949
 MeshRenderer:
   m_ObjectHideFlags: 0

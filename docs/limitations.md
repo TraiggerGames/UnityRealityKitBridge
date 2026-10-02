@@ -15,6 +15,6 @@
 
 ## Alcance técnico
 
-La sincronización de objetos envía una instantánea JSON completa a 10 Hz. Manos se muestrean hasta unas 30 veces/s por mano. El exportador admite `MeshFilter` estático, UV y una textura de color base; no traduce materiales o efectos avanzados. Las superficies son rectángulos estimados, no mallas de la habitación. El ejemplo de pinza usa solo una distancia entre dedos. El modelo de muestra tiene más de un millón de triángulos y puede requerir simplificación.
+La sincronización de objetos envía una instantánea JSON completa cuando algo cambia (hasta una por frame de Unity) y un latido de 2 Hz si todo está quieto. Manos se muestrean hasta unas 30 veces/s por mano. El exportador admite `MeshFilter` estático, UV y una textura de color base; no traduce materiales o efectos avanzados. Las superficies son rectángulos estimados, no mallas de la habitación. El ejemplo de pinza usa solo una distancia entre dedos. El modelo de muestra tiene más de un millón de triángulos y puede requerir simplificación.
 
 El export local se compiló para dispositivo; no se validó una variante de simulador. Unity Personal continúa produciendo un Player Windowed que el host ejecuta como biblioteca. Este proyecto no ofrece compatibilidad general con cualquier escena ni paridad con PolySpatial.

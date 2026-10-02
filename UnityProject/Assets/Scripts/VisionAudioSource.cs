@@ -2,7 +2,7 @@ using UnityEngine;
 
 // Attach a mono WAV/AIFF clip to a VisionObject. Calling Play() from any Unity
 // script increments a command number; the RealityKit entity plays that asset
-// from its current 3D position once, even though scene frames repeat at 10 Hz.
+// from its current 3D position once, even though scene snapshots are sent repeatedly.
 [RequireComponent(typeof(VisionObject))]
 public sealed class VisionAudioSource : MonoBehaviour
 {

@@ -2,14 +2,14 @@ import SwiftUI
 import RealityKit
 
 // Build-time switches written into Info.plist by integrate_host.rb.
-// MVPDebugUI=false is the production mode: no control window, no native marker.
+// MVPDebugUI=false is the production mode: no control window.
 enum HostConfig {
     static let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "?"
     static let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "?"
     static let debugUI = Bundle.main.object(forInfoDictionaryKey: "MVPDebugUI") as? Bool ?? true
-    // Demo shift between Unity's origin and the native marker. Anchors use the
-    // same shift so Unity coordinates mean the same place everywhere.
-    static let displayOffset: SIMD3<Float> = [0.6, 0, 0]
+    // Shift between Unity's origin and the native space. Zero: Unity coordinates
+    // are the native coordinates. Hands, surfaces and anchors all apply it.
+    static let displayOffset: SIMD3<Float> = [0, 0, 0]
 }
 
 @main struct HostApp: App {
@@ -76,7 +76,11 @@ struct LaunchView: View {
             Button("Borrar anclas") { anchors.clearAll() }
             TimelineView(.periodic(from: .now, by: 1)) { _ in
                 // Polled once per second so diagnostics add no per-frame redraws.
-                Text(bridge.takeStats().summary).monospacedDigit()
+                let stats = bridge.takeStats()
+                VStack(spacing: 4) {
+                    Text(String(format: "Render %.0f fps · ", RenderFPS.shared.take()) + stats.unitySummary)
+                    Text(stats.summary)
+                }.monospacedDigit()
             }
             Toggle("Inicio automático", isOn: $autoStart).frame(maxWidth: 320)
             Button(isOpen ? "Cerrar espacio" : "1. Abrir espacio nativo") {
@@ -119,7 +123,7 @@ struct LaunchView: View {
         switch await open(id: "cube-space") {
         case .opened:
             isOpen = true
-            message = "Espacio abierto; el marcador magenta es nativo."
+            message = "Espacio abierto."
             print("[MVP] Immersive space opened")
         case .userCancelled:
             message = "Apertura cancelada."
@@ -143,20 +147,18 @@ struct SceneSpace: View {
     @StateObject private var sensors = SensorService.shared
     @StateObject private var anchors = AnchorService.shared
     private let entityPrefix = "vision:"
+    @State private var fpsSubscription: EventSubscription?
 
     var body: some View {
         RealityView { content in
-            // Debug-only fixed reference marker. It never receives a Unity transform.
-            if HostConfig.debugUI {
-                let marker = ModelEntity(mesh: .generateBox(size: 0.3),
-                                         materials: [UnlitMaterial(color: .magenta)])
-                marker.name = "native-marker"
-                marker.position = [-0.8, 1.45, -1.4]
-                content.add(marker)
-            }
             // Room mesh (empty unless Unity or the debug window enables it).
             MapService.shared.root.removeFromParent()
             content.add(MapService.shared.root)
+            if HostConfig.debugUI {
+                fpsSubscription = content.subscribe(to: SceneEvents.Update.self) { _ in
+                    MainActor.assumeIsolated { RenderFPS.shared.tick() }
+                }
+            }
             print("[MVP] RealityView created")
         } update: { content in
             let currentIDs = Set(bridge.objects.map(\.id))
@@ -170,6 +172,8 @@ struct SceneSpace: View {
             }
             for state in bridge.objects {
                 let name = entityPrefix + state.id
+                // A panel's scale is its size in meters, handled by InfoPanels.
+                let objectScale: SIMD3<Float> = state.shape == "panel" ? [1, 1, 1] : state.scale.simd
                 let root: Entity
                 if let existing = content.entities.first(where: { $0.name == name }) {
                     root = existing
@@ -179,6 +183,8 @@ struct SceneSpace: View {
                     if state.shape == "model", let asset = state.asset,
                        let model = ModelAssetStore.shared.clone(asset) {
                         root.addChild(model)
+                    } else if state.shape == "panel" {
+                        // Content is attached below by InfoPanels.update.
                     } else {
                         let mesh: MeshResource = state.shape == "sphere"
                             ? .generateSphere(radius: 0.5) : .generateBox(size: 1)
@@ -195,7 +201,7 @@ struct SceneSpace: View {
                 if let anchorID = state.anchor, !anchorID.isEmpty {
                     // Anchored: position/rotation are local to the anchor, and
                     // the object stays hidden until ARKit knows where it is.
-                    let local = Transform(scale: state.scale.simd, rotation: state.rotation.simd,
+                    let local = Transform(scale: objectScale, rotation: state.rotation.simd,
                                           translation: state.position.simd).matrix
                     if let pose = anchors.poses[anchorID] {
                         root.transform = Transform(matrix: pose * local)
@@ -205,10 +211,11 @@ struct SceneSpace: View {
                     }
                 } else {
                     root.isEnabled = true
-                    root.transform = Transform(scale: state.scale.simd,
+                    root.transform = Transform(scale: objectScale,
                                                rotation: state.rotation.simd,
                                                translation: state.position.simd + HostConfig.displayOffset)
                 }
+                if state.shape == "panel" { InfoPanels.update(root, state: state) }
                 AudioPlaybackTracker.shared.update(id: state.id, key: state.audio,
                                                    sequence: state.audioSequence,
                                                    entity: root)

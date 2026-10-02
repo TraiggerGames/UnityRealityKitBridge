@@ -4,7 +4,7 @@ La fuente C# está en `UnityProject/Assets/Scripts/`; la fuente nativa en `Unity
 
 ## Unity → RealityKit
 
-`VisionSceneBridge` publica a 10 Hz una instantánea completa; un ID ausente se elimina. Cada ID debe ser único y estable.
+`VisionSceneBridge` publica una instantánea completa cuando algo cambia (hasta una por frame; `publishRate` limita el máximo) y a `idleRate` Hz (2 por defecto) si todo está quieto; un ID ausente se elimina. Cada ID debe ser único y estable.
 
 ```json
 {
@@ -29,15 +29,19 @@ Campos opcionales de anclaje y mapeo, en el mismo marco:
   "anchors": [{"id": "sculpture-anchor", "op": "ensure", "sequence": 3,
                "position": {"x": 0.2, "y": 0.9, "z": -1.5},
                "rotation": {"x": 0, "y": 0, "z": 0, "w": 1}}],
-  "map": "off"
+  "map": "off",
+  "unityFps": 58.7,
+  "unityMaxFps": 90
 }
 ```
+
+`unityFps` y `unityMaxFps` son diagnósticos opcionales para la ventana debug: los fotogramas por segundo que Unity ejecutó desde el mensaje anterior y el máximo permitido (`Application.targetFrameRate`, o la frecuencia de la pantalla dividida por el intervalo de vSync).
 
 - `anchors` son órdenes de un solo uso: el host ejecuta cada `sequence` mayor que la última vista, en orden, y las repite hasta que Unity las retira (máximo 64). `ensure` crea el ancla solo si no existe (clave para contenido que se conserva entre sesiones), `place` la reemplaza y `remove` la borra. No se consume ninguna hasta que la sesión ARKit de anclas esté activa; el siguiente marco las reintenta.
 - Un objeto con `anchor` interpreta `position`, `rotation` y `scale` como locales al ancla y permanece oculto hasta que ARKit localiza el ancla. Sin `anchor` se mantiene el comportamiento anterior.
 - `map` es `off`, `mesh` (malla de la habitación en alambre) u `occlusion` (las superficies reales ocultan los objetos virtuales). Un cambio hecho desde Unity sustituye la elección de la ventana debug.
 
-`shape` admite `box`, `sphere` y `model`. `asset` nombra un USDA en `VisionModels/`. `audio` nombra un WAV/AIFF en `VisionAudio/`; cuando `audioSequence` aumenta, RealityKit lo reproduce una vez desde la posición de la entidad. El color modifica primitivas; los modelos conservan su textura. Posición y escala están en metros. El bridge refleja Z y convierte el cuaternión de Unity al sistema de RealityKit. El host añade 0,6 m en X solo para separar la demo del marcador magenta.
+`shape` admite `box`, `sphere`, `model` y `panel`. Un `panel` es una tarjeta de texto: añade `title`, `text` y `faceUser` al objeto, su `scale.x`/`scale.y` es el ancho/alto en metros y `color` tiñe la barra de acento; el host la dibuja con una vista SwiftUI adjunta a la entidad. `asset` nombra un USDA en `VisionModels/`. `audio` nombra un WAV/AIFF en `VisionAudio/`; cuando `audioSequence` aumenta, RealityKit lo reproduce una vez desde la posición de la entidad. El color modifica primitivas; los modelos conservan su textura. Posición y escala están en metros. El bridge refleja Z y convierte el cuaternión de Unity al sistema de RealityKit.
 
 ## RealityKit y ARKit → Unity
 

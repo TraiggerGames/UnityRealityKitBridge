@@ -13,7 +13,7 @@ flowchart LR
     R --> O[Audio espacial nativo]
 ```
 
-**Unity es la fuente de verdad de la lógica.** Cada objeto con `VisionObject` tiene un ID estable, una forma o clave de modelo y un `Transform`. `VisionSceneBridge` envía una instantánea completa 10 veces por segundo. El host crea, actualiza o elimina las entidades RealityKit según esa instantánea.
+**Unity es la fuente de verdad de la lógica.** Cada objeto con `VisionObject` tiene un ID estable, una forma o clave de modelo y un `Transform`. `VisionSceneBridge` envía una instantánea completa cuando algo cambia (hasta una por frame de Unity) y un latido de 2 Hz si todo está quieto. El host crea, actualiza o elimina las entidades RealityKit según esa instantánea.
 
 **Los recursos viajan en el build.** `ExportVisionModels.cs` convierte mallas `MeshFilter` con UV y una textura de color base a USDA; `ExportVisionAudio.cs` copia WAV/AIFF. `BuildVisionExperience.cs` añade los recursos al Xcode exportado y ejecuta `Assets/Editor/VisionHost/integrate_host.rb`. Ese script integra `NativeHost` y aplica los parches de ventana necesarios para que Unity no oculte el espacio inmersivo.
 

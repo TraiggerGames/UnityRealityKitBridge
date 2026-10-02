@@ -1,5 +1,6 @@
 import ARKit
 import Foundation
+import RealityKit
 import simd
 
 // Unity asks for anchors by name; ARKit keeps them across launches (WorldAnchor)

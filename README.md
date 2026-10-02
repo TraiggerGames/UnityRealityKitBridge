@@ -23,7 +23,7 @@ Puente experimental para crear experiencias inmersivas con **lógica en Unity/C#
 4. Pulsa **MVP → Build immersive visionOS app**. Elige una carpeta de destino. Unity exporta el Player y añade automáticamente `NativeHost`, los modelos, las texturas, el audio y los permisos de sensores.
 5. Abre el `.xcodeproj` resultante, selecciona el esquema **NativeHost**, firma y ejecuta en Vision Pro. El host abre solo el espacio inmersivo e inicia la lógica Unity; acepta los permisos de sensores que quieras usar.
 
-**Modo debug / producción.** El menú **MVP → Debug host UI** (activo por defecto; un Development Build también lo activa) decide qué host se genera. En debug la ventana muestra estado, botones manuales, interruptor de inicio automático y diagnósticos (mensajes/s, tamaño, tiempo de decodificación, peor intervalo entre frames) y se ve el cubo magenta nativo. Con el menú desmarcado y sin Development Build, el host muestra solo «Cargando experiencia…», oculta la ventana al arrancar y no dibuja el marcador. Se escribe como `MVPDebugUI` en el `Info.plist` del host.
+**Modo debug / producción.** El menú **MVP → Debug host UI** (activo por defecto; un Development Build también lo activa) decide qué host se genera. En debug la ventana muestra estado, botones manuales, interruptor de inicio automático y diagnósticos (mensajes/s, tamaño, tiempo de decodificación, peor intervalo entre frames, FPS de render). Con el menú desmarcado y sin Development Build, el host muestra solo «Cargando experiencia…» y oculta la ventana al arrancar. Se escribe como `MVPDebugUI` en el `Info.plist` del host.
 
 La copia local actual del export está en `Xcode/Generated/`; **no se sube a Git**. Después de clonar, genérala con el paso 4.
 
@@ -32,6 +32,7 @@ La copia local actual del export está en `Xcode/Generated/`; **no se sube a Git
 | Necesidad | API C# |
 | --- | --- |
 | Mover, girar o escalar un objeto | Cualquier `MonoBehaviour` que modifique su `Transform` |
+| **Controles sencillos (empieza aquí)** | `VisionControls`, `VisionInteractable` y las [plantillas](docs/es/api.md#7-plantillas-copiar-renombrar-editar) |
 | Tap sobre una entidad | `VisionObject.SelectionChanged` |
 | Arrastre 3D | `VisionInput.ObjectDragged` |
 | Mano y pinza personalizada | `VisionInput.HandUpdated` |
@@ -62,6 +63,8 @@ docs/                        Arquitectura, protocolo, límites y contribución
 
 ## Documentación
 
+- [**Referencia de la API (ES)**](docs/es/api.md) · [**API reference (EN)**](docs/en/api.md)
+- [Registro de cambios / Changelog](CHANGELOG.md) · [Novedades 0.14](docs/es/whats-new-0.14.md) · [What's new in 0.14](docs/en/whats-new-0.14.md)
 - [Flujo de trabajo en Unity](docs/unity-workflow.md)
 - [Arquitectura](docs/architecture.md)
 - [Contrato del bridge](docs/protocol.md)
@@ -75,4 +78,4 @@ El código propio y los recursos de muestra necesitan una licencia explícita an
 
 ---
 
-**English:** Experimental Unity C# logic bridge for a native immersive visionOS host. Build from `UnityProject/`; generated Xcode output stays local. See the Spanish guides above for setup, protocol and current limitations.
+**English:** Experimental Unity C# logic bridge for a native immersive visionOS host. Build from `UnityProject/`; generated Xcode output stays local. Start with the [API reference](docs/en/api.md) and the copy-and-edit [templates](docs/en/api.md#7-templates-copy-rename-edit); see the [changelog](CHANGELOG.md). The remaining guides are in Spanish.
